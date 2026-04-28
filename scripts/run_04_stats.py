@@ -17,7 +17,7 @@ df     = pd.read_csv('../data/processed/hr_cleaned.csv')
 df_eng = pd.read_csv('../data/processed/hr_engineered.csv')
 print(f"Analytical df: {df.shape} | Engineered: {df_eng.shape}")
 
-# ── HYPOTHESIS TESTS ────────────────────────────────────────────────────
+
 def cramers_v(x,y):
     ct = pd.crosstab(x,y)
     chi2,_,_,_ = chi2_contingency(ct)
@@ -64,7 +64,7 @@ res_df = pd.DataFrame(results, columns=['Hypothesis','Test','Statistic','P-Value
 print(res_df.to_string(index=False))
 res_df.to_csv('../data/processed/04_hypothesis_results.csv', index=False)
 
-# ── CRAMÉR'S V CHART ────────────────────────────────────────────────────
+
 cat_features = ['city_tier','experience_band','education_level','company_type',
                 'company_size','enrolled_university','major_discipline','gender']
 es = {col: cramers_v(df[col], df['target']) for col in cat_features}
@@ -83,7 +83,7 @@ plt.savefig('../data/processed/04_cramers_v.png', dpi=150, bbox_inches='tight')
 plt.close()
 print("Cramér's V chart saved")
 
-# ── MODELS ─────────────────────────────────────────────────────────────
+
 X = df_eng.drop(columns=['target'])
 y = df_eng['target']
 X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2,random_state=42,stratify=y)
@@ -92,7 +92,7 @@ scaler = StandardScaler()
 Xtr_sc = scaler.fit_transform(X_train)
 Xte_sc = scaler.transform(X_test)
 
-# Logistic Regression
+
 lr = LogisticRegression(class_weight='balanced', max_iter=500, random_state=42, C=0.5)
 lr.fit(Xtr_sc, y_train)
 y_pred_lr = lr.predict(Xte_sc)
@@ -101,7 +101,7 @@ print("\nLogistic Regression:")
 print(classification_report(y_test, y_pred_lr, target_names=['Not Switching','Switching']))
 print(f"AUC-ROC: {roc_auc_score(y_test, y_prob_lr):.4f}")
 
-# Coefficient plot
+
 coef_df = pd.DataFrame({'Feature':X.columns,'Coef':lr.coef_[0]}).sort_values('Coef',key=abs,ascending=False).head(15)
 fig, ax = plt.subplots(figsize=(12,7))
 ax.barh(coef_df['Feature'], coef_df['Coef'], color=[C['a'] if c>0 else C['p'] for c in coef_df['Coef']], alpha=0.88)
@@ -111,7 +111,7 @@ plt.tight_layout()
 plt.savefig('../data/processed/04_lr_coefficients.png', dpi=150, bbox_inches='tight')
 plt.close()
 
-# Random Forest
+
 rf = RandomForestClassifier(n_estimators=200, class_weight='balanced', random_state=42, max_depth=10, min_samples_leaf=20, n_jobs=-1)
 rf.fit(X_train, y_train)
 y_pred_rf = rf.predict(X_test)
@@ -120,7 +120,7 @@ print("\nRandom Forest:")
 print(classification_report(y_test, y_pred_rf, target_names=['Not Switching','Switching']))
 print(f"AUC-ROC: {roc_auc_score(y_test, y_prob_rf):.4f}")
 
-# Feature importance
+
 fi_df = pd.DataFrame({'Feature':X.columns,'Importance':rf.feature_importances_}).sort_values('Importance',ascending=False).head(15)
 fig, ax = plt.subplots(figsize=(12,7))
 ax.barh(fi_df['Feature'][::-1], fi_df['Importance'][::-1], color=C['p'], alpha=0.88)
@@ -129,7 +129,7 @@ plt.tight_layout()
 plt.savefig('../data/processed/04_rf_feature_importance.png', dpi=150, bbox_inches='tight')
 plt.close()
 
-# ROC
+
 fig, ax = plt.subplots(figsize=(8,7))
 for name, yp in [('Logistic Regression',y_prob_lr),('Random Forest',y_prob_rf)]:
     fpr,tpr,_ = roc_curve(y_test,yp)
@@ -140,7 +140,7 @@ plt.tight_layout()
 plt.savefig('../data/processed/04_roc_comparison.png', dpi=150, bbox_inches='tight')
 plt.close()
 
-# Confusion matrices
+
 fig, axes = plt.subplots(1,2, figsize=(14,5))
 for ax,(name,yp) in zip(axes,[('Logistic Regression',y_pred_lr),('Random Forest',y_pred_rf)]):
     cm = confusion_matrix(y_test,yp)
